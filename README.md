@@ -1,21 +1,5 @@
 <div align="center">
 
-![task-split-skill](assets/banner.svg)
-
-</div>
-
-<p align="center">
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![OpenClaw](https://img.shields.io/badge/OpenClaw-Supported-blueviolet)](https://github.com/openclaw)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-Compatible-green)](https://claude.ai)
-[![Codex](https://img.shields.io/badge/Codex-Compatible-orange)](https://github.com)
-[![Hermes](https://img.shields.io/badge/Hermes-Agent-blue)](https://github.com)
-
-</p>
-
-<div align="center">
-
 # task-split-skill
 
 AI Agent 任务拆解方法论 — 将模糊需求拆解为可执行、可追踪、可验证的工作计划

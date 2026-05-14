@@ -1,5 +1,5 @@
 ---
-name: task-split
+name: task-split-skill
 description: AI Agent task decomposition methodology for breaking complex requests into executable, trackable, verifiable work plans
 description_zh: AI Agent 任务拆解方法论 — 将模糊需求拆解为可执行、可追踪、可验证的工作计划
 triggers:
@@ -14,8 +14,9 @@ triggers:
 category: methodology
 author: relunctance
 created: 2026-05-14
-updated: 2026-05-14
-version: "1.0.0"
+updated: 2026-05-15
+version: "1.1.0"
+license: MIT
 tags:
   - task-management
   - methodology
@@ -212,7 +213,37 @@ Task Decomposition (thinking process)
 - **Skill** = "Shortcut" for decomposition results (use if available)
 - **Memory** = "Notebook" of lessons learned (reference next time)
 
-### 7. Cheatsheet
+### 7. Priority Definitions
+
+| Priority | Meaning | Response |
+|----------|---------|----------|
+| **P0** | 阻断性问题，必须立即解决 | 停下手头所有工作，先处理 P0 |
+| **P1** | 核心功能，影响主流程 | 尽快完成，不阻塞其他 P1 |
+| **P2** | 重要但不紧急 | 按正常流程完成 |
+| **P3** | 增强/优化 | 有余力再做 |
+
+**Decision rule**: If you can't decide between P0 and P1, ask the user.
+
+### 8. Acceptance Criteria Template
+
+Every task should have verifiable acceptance criteria:
+
+```
+## 验收标准
+- [ ] 条件 1（具体、可检查）
+- [ ] 条件 2（必须实际执行才能验证）
+- [ ] 条件 3（边界情况）
+```
+
+```
+❌ Bad: "功能正常运行"
+✅ Good: "输入 x 返回 y；空输入提示'请输入'；非法输入提示'格式错误'"
+
+❌ Bad: "文档完善"
+✅ Good: "README.md 包含：安装步骤（3步）、快速开始（2个命令）、troubleshooting（4个常见问题）"
+```
+
+### 9. Cheatsheet
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -223,21 +254,28 @@ Task Decomposition (thinking process)
 │  ├── What is the final deliverable?              │
 │  ├── How many files need changes?                │
 │  ├── Any uncertainty to confirm first?           │
-│  └── Which steps can run in parallel?            │
+│  ├── Which steps can run in parallel?            │
+│  └── What is the P0 / P1 priority?              │
+│                                                  │
+│  Priority rule:                                  │
+│  ├── P0 = 阻断，必须立即处理                    │
+│  ├── P1 = 核心功能，尽快完成                    │
+│  └── P2/P3 = 有余力再做                        │
 │                                                  │
 │  Task description template:                      │
 │  [verb] + [object] + [detail] + [criteria]      │
 │                                                  │
-│  Granularity:                                    │
-│  ├── Simple: no split (< 3 steps)                │
-│  ├── Medium: 3-8 subtasks                        │
-│  └── Complex: 8+ subtasks + milestone groups     │
+│  Acceptance criteria template:                   │
+│  ## 验收标准                                    │
+│  - [ ] 具体条件1                               │
+│  - [ ] 具体条件2                               │
 │                                                  │
-│  Execution rhythm:                               │
-│  ├── Research/confirm first, then implement      │
-│  ├── Core logic first, then edge cases           │
-│  ├── Feature first, then docs                    │
-│  └── Update status immediately after each task   │
+│  Tools:                                         │
+│  task-list.py create "title" --priority P0      │
+│  task-list.py list --status pending             │
+│  task-list.py start/done <id>                  │
+│  task-list.py tree                             │
+│  task-list.py stats                            │
 │                                                  │
 └─────────────────────────────────────────────────┘
 ```
