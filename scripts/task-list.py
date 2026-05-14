@@ -109,11 +109,15 @@ def cmd_list(status: str = None, priority: str = None) -> str:
     if not tasks:
         return "📌 暂无任务"
 
-    filtered = tasks
-    if status:
-        filtered = [t for t in filtered if t["status"] == status]
-    if priority:
-        filtered = [t for t in filtered if t.get("priority") == priority]
+    # 默认不显示已删除的任务，但用户显式指定 --status deleted 时除外
+    if status == "deleted":
+        filtered = [t for t in tasks if t["status"] == "deleted"]
+    else:
+        filtered = [t for t in tasks if t["status"] != "deleted"]
+        if status:
+            filtered = [t for t in filtered if t["status"] == status]
+        if priority:
+            filtered = [t for t in filtered if t.get("priority") == priority]
 
     if not filtered:
         return "📌 没有符合条件的任务"
@@ -179,7 +183,7 @@ def cmd_block(tid: int, by: list = None) -> str:
     for t in tasks:
         if t["id"] == tid:
             if by:
-                for b in by:
+                for b in (by or []):
                     if not any(x["id"] == b for x in tasks):
                         return f"❌ 阻塞任务 #{b} 不存在"
                 t["depends"] = list(set(t.get("depends", [])) | set(by))
