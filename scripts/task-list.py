@@ -11,18 +11,19 @@ task-list — 任务列表管理脚本
   python task-list.py tree
   python task-list.py stats
 
-状态文件：~/.hermes/.task-list.json
+状态文件：通过 platform_detect.state_file() 获取（平台自适应，profile/workspace 隔离）
 """
 
 import argparse
 import json
-import os
 import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
 
-STATE_FILE = Path(os.path.expanduser("~/.hermes/.task-list.json"))
+from platform_detect import state_file
+
+STATE_FILE = state_file(".task-list.json")
 BACKUP_FILE = STATE_FILE.with_suffix(".json.bak")
 
 
