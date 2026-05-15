@@ -12,99 +12,161 @@ AI Agent 任务拆解方法论 — 将模糊需求拆解为可执行、可追踪
 
 | 特性 | 说明 |
 |------|------|
-| 🧩 **五步拆解法** | 理解澄清 → 交付物识别 → 分解排序 → 风险预判 → 执行追踪 |
-| 📐 **粒度控制** | 原子任务 / 组合任务 / 里程碑任务三级粒度 |
-| 🔗 **依赖建模** | 串行、并行分支、菱形依赖三种模式 |
+| 🧩 **五步拆解法** | 澄清 → 交付物识别 → 分解排序 → 风险预判 → 执行追踪 |
+| ❓ **澄清问题模板** | Step 1 必填 4 问，不澄清不拆解 |
+| ✅ **验收标准强制** | 每个子任务必须有可检查的验收条件 |
+| 📐 **粒度控制** | 原子/组合/里程碑三级粒度 + 明确反例 |
+| 🔗 **依赖建模** | 串行、并行分支、菱形依赖 + task-list.py 工具支撑 |
 | ⚡ **动态调整** | 执行中实时响应变化，插入/合并/删除任务 |
-| 🔄 **与 Skill 协同** | 拆解是思考过程，Skill 是快捷方式，Memory 是笔记本 |
+| 🔄 **Skill 协同** | 拆解是思考过程，Skill 是快捷方式，Memory 是笔记本 |
+
+---
+
+## 触发条件
+
+> ⚠️ 与 OpenSpec 边界清晰：OpenSpec 由 `/opsx:` 命令触发，task-split 由自然语言触发。
+
+| 触发词 | 说明 |
+|--------|------|
+| `任务拆解` / `拆解任务` / `拆解成` | 核心触发 |
+| `工作分解` / `WBS` | 专业术语 |
+| `task decomposition` / `task split` | 英文触发 |
+
+**不触发**： `/opsx:` → OpenSpec | `目标追踪` → target-skill
 
 ---
 
 ## 快速开始
 
 ```bash
-# Hermes
+# 安装（推荐方式）
+bash ~/repos/task-split-skill/scripts/setup.sh
+
+# 或手动复制
 mkdir -p ~/.hermes/skills/task-split
 cp SKILL.md ~/.hermes/skills/task-split/
-
-# Claude Code
-mkdir -p ~/claude/skills/task-split
-cp SKILL.md ~/claude/skills/task-split/
 ```
 
 ---
 
-## 触发条件
-
-- 任务拆解 / task decomposition
-- 拆解任务 / 拆解
-- 任务规划 / task planning
-- 子任务 / 工作分解 / WBS
-
----
-
-## 方法论概览
-
-### 五步拆解流程
+## 五步拆解流程
 
 ```
 用户需求（模糊）
     │
     ▼
-Step 1: 理解 & 澄清 → 核心目标？隐含约束？需要 Plan Mode？
+Step 1: 澄清问题（4 个必填问题）
     │
     ▼
-Step 2: 识别交付物 → 最终产出什么？验收标准是什么？
+Step 2: 识别交付物 + 验收标准（每个任务必填）
     │
     ▼
-Step 3: 分解 & 排序 → 按依赖排列，识别并行分支
+Step 3: 分解 & 排序（依赖建模）
     │
     ▼
-Step 4: 风险预判 → 哪里可能出错？Plan B 是什么？
+Step 4: 风险预判
     │
     ▼
-Step 5: 执行追踪 → TaskCreate + addBlockedBy + 实时状态更新
+Step 5: task-list.py 创建 + 执行追踪
 ```
 
-### 黄金法则
+---
 
-> **一个任务的描述应该让另一个 Agent 看了就能直接执行，不需要额外上下文。**
-
-```
-❌ 差: "完善文档"
-✅ 好: "在 docs/STATUS.md 的角色表格中追加新行，格式为 | 角色名 | 描述 | ✅ |"
-```
-
-### 依赖关系模式
+## Step 1 — 澄清问题模板（必填）
 
 ```
-串行: [调研] → [设计] → [实现] → [测试]
+## 澄清问题
 
-并行:       ┌→ [页面 A] ─┐
-     [设计] ┤             ├→ [集成测试]
-             └→ [页面 B] ─┘
-
-菱形: [后端] ──┐
-               ├──→ [联调]
-       [前端] ──┘
+1. 最终交付物是什么？（具体文件/功能/路径）
+2. 成功标准是什么？（可运行/可部署/具体指标）
+3. 限制条件有哪些？（技术栈/兼容性/安全）
+4. MVP 范围 vs 完整版？
 ```
+
+---
+
+## Step 2 — 验收标准示例
+
+```
+❌ Bad: "功能正常运行"
+✅ Good: "POST /api/login 返回 200 + token；空 body 返回 400；密码错误返回 401"
+
+❌ Bad: "完善文档"
+✅ Good: "README.md 包含：安装步骤（3步）、快速开始（2个命令）、troubleshooting（4个问题）"
+```
+
+---
+
+## 依赖建模示例
+
+```bash
+# 创建任务并建立依赖
+python task-list.py create "调研 API" --priority P1
+python task-list.py create "设计模型" --priority P1 --depends 1
+python task-list.py create "实现后端" --priority P1 --depends 2
+python task-list.py create "前端开发" --priority P2 --depends 2
+python task-list.py create "集成测试" --priority P1 --depends 3,4
+
+# 查看依赖树
+python task-list.py tree
+
+# 查看统计
+python task-list.py stats
+```
+
+---
+
+## 粒度原则
+
+| 场景 | 决策 |
+|------|------|
+| > 5 分钟 / 3+ 文件 / 多个方案 | ✅ 必须拆解 |
+| 单行 fix / 纯查询 / 用户说"just do it" | ❌ 不拆解 |
+
+---
+
+## 与其他 Skill 的关系
+
+| Skill | 职责 | 触发 |
+|--------|------|------|
+| **task-split** | 任务拆解 | 自然语言 |
+| **OpenSpec** | 开发规范 | `/opsx:` 命令 |
+| **target-skill** | 目标追踪 | 用户主动开启 |
 
 ---
 
 ## 平台支持
 
-| 平台 | 状态 | 安装方式 |
-|------|------|---------|
-| OpenClaw | ✅ 支持 | `clawhub install task-split` |
-| Claude Code | ✅ 支持 | 复制 SKILL.md 到 `~/claude/skills/task-split/` |
-| Codex | ✅ 支持 | 复制 SKILL.md 到 `~/.codex/skills/task-split/` |
-| Hermes | ✅ 支持 | 复制 SKILL.md 到 `~/.hermes/skills/task-split/` |
+| 平台 | 状态 | 安装 |
+|------|------|------|
+| OpenClaw | ✅ | `clawhub install task-split` |
+| Claude Code | ✅ | 复制 SKILL.md 到 `~/claude/skills/task-split/` |
+| Codex | ✅ | 复制 SKILL.md 到 `~/.codex/skills/task-split/` |
+| Hermes | ✅ | `bash scripts/setup.sh` |
+| Cursor | ✅ | 复制到 `.cursor/rules/` |
 
 ---
 
-## 详见
+## 目录结构
 
-完整的 SKILL.md 定义、参数说明和踩坑记录请查阅 [SKILL.md](SKILL.md)。
+```
+task-split-skill/
+├── SKILL.md          # 完整 Skill 定义（方法论 + CLI 参考 + 踩坑）
+├── README.md         # 本文档
+├── LICENSE           # MIT
+├── scripts/
+│   ├── task-list.py # 任务列表管理 CLI（创建/开始/完成/依赖/树/统计）
+│   └── setup.sh     # 多平台安装脚本
+```
+
+---
+
+## 更新日志
+
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| 1.2.0 | 2026-05-15 | Step 1 澄清模板强制化；验收标准每任务必填；task-list.py CLI 完整参考；trigger 去冲突；与 OpenSpec/target-skill 边界定义 |
+| 1.1.0 | 2026-05-15 | 初版发布 |
 
 ---
 
