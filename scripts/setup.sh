@@ -1,6 +1,6 @@
 #!/bin/bash
 # task-split-skill setup script
-# 推荐使用 skill-sync 同步：python3 ~/repos/skill-sync/scripts/sync-hermes-skills.py
+# 使用 skill-sync 同步：python3 $(repos_root)/skill-sync/scripts/sync-hermes-skills.py
 
 set -e
 
@@ -8,11 +8,12 @@ echo "Setting up task-split-skill..."
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
+SKILL_SYNC="$REPO_DIR/skill-sync/scripts/sync-hermes-skills.py"
 
 # Hermes（推荐方式）
-if [ -f ~/repos/skill-sync/scripts/sync-hermes-skills.py ]; then
+if [ -f "$SKILL_SYNC" ]; then
     echo "[Hermes] 使用 skill-sync 同步..."
-    python3 ~/repos/skill-sync/scripts/sync-hermes-skills.py task-split-skill
+    python3 "$SKILL_SYNC" task-split-skill
 else
     echo "[Hermes] skill-sync 未找到，使用手动安装..."
     mkdir -p ~/.hermes/skills/task-split
@@ -41,4 +42,3 @@ fi
 
 echo ""
 echo "Done! task-split-skill ready."
-echo "推荐：python3 ~/repos/skill-sync/scripts/sync-hermes-skills.py"
