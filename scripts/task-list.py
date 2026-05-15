@@ -11,7 +11,7 @@ task-list — 任务列表管理脚本
   python task-list.py tree
   python task-list.py stats
 
-状态文件：~/.hermes/profiles/baijie/.task-list.json
+状态文件：~/.hermes/.task-list.json
 """
 
 import argparse
@@ -22,7 +22,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-STATE_FILE = Path.home() / ".hermes" / "profiles" / "baijie" / ".task-list.json"
+STATE_FILE = Path(os.path.expanduser("~/.hermes/.task-list.json"))
 BACKUP_FILE = STATE_FILE.with_suffix(".json.bak")
 
 
