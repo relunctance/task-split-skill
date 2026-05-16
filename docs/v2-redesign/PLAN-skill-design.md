@@ -462,7 +462,87 @@ base-skill 标配 skill 组合：
 
 ---
 
-## 12. 设计原则
+## 12. 多 Skill 联动机制
+
+### 12.1 核心问题
+
+当一个 skill 改了输出格式，其他 skill 可能不知道，导致不兼容。
+
+### 12.2 解决方案：版本契约 + 变更通知
+
+**版本契约文件**：`docs/schemas.md`
+
+```markdown
+# Schema 版本契约
+
+## PLAN.md
+- 版本：1.0
+- 位置：`docs/PLAN.md`
+- 消费者：plan-review-skill, task-split-skill
+
+## .target-trigger
+- 版本：1.0
+- 位置：项目根目录
+- 消费者：target-skill
+
+## .target-state.json
+- 版本：1.0
+- 位置：项目根目录
+- 消费者：target-skill
+
+---
+
+## 变更记录
+
+| 日期 | Schema | 变更内容 | 影响范围 |
+|------|--------|---------|---------|
+| 2026-05-17 | .target-state.json | 新增 milestone + subTask 结构 | target-skill |
+```
+
+### 12.3 版本检查 SOP
+
+当 skill 读取其他 skill 的输出时：
+
+```markdown
+## 检查版本
+
+1. 读取输出文件的版本字段
+2. 对比 `docs/schemas.md` 中的版本
+3. 如果版本不匹配：
+   → 提示用户：「版本不匹配，可能存在兼容性问题」
+   → 不卡住，但明确告知
+```
+
+### 12.4 更新 skill 时的 SOP
+
+```
+1. 评估影响范围
+   - 改了输出格式？→ 检查消费者
+   - 改了输入格式？→ 检查提供者
+
+2. 更新 docs/schemas.md
+   - 追加变更记录
+   - 更新版本号
+
+3. 通知用户
+   - 「此更新影响以下 Skill：xxx」
+   - 「建议同步更新」
+
+4. 在 skill 的 learns/ 记录
+   - 本次变更对其他 skill 的影响
+```
+
+### 12.5 各 Skill 的版本字段
+
+| 文件 | 版本字段 | 位置 |
+|------|---------|------|
+| `docs/PLAN.md` | `version` | frontmatter |
+| `.target-trigger` | `version` | JSON 顶层 |
+| `.target-state.json` | `schemaVersion` | JSON 顶层 |
+
+---
+
+## 13. 设计原则
 
 1. **用户确认后才写入文件** — 所有必填字段必须经过用户确认
 2. **格式校验是强制性的** — 校验不通过不写入文件
