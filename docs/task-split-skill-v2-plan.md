@@ -74,6 +74,20 @@ target-skill（接管追踪）
 | SKILL.md | 新增「与 PLAN.md 协同」章节 + 两种输出模式 |
 | learns/ | 记录本次调整的踩坑 |
 
+**无代码改动。**
+
+## 与 base-skill 的兼容性
+
+**原则**：始终检查 `docs/PLAN.md` 是否存在，不检查 plan-review-skill 是否安装。
+
+| 情况 | 行为 |
+|------|------|
+| `docs/PLAN.md` 存在 | 读取 milestone，在其下拆 sub-task，输出 milestone + subTask |
+| `docs/PLAN.md` 不存在 | 走原有 Step 1 澄清流程，输出扁平列表 |
+| plan-review-skill 未安装 | 不影响，PLAN.md 可以是用户手动创建的 |
+
+> 注意：PLAN.md 的来源不重要，只需要检查文件是否存在。
+
 ## 实施顺序
 
 Phase 1: plan-review-skill（先做）→ 写 `.target-trigger`

@@ -539,67 +539,62 @@ target-skill（接管追踪）
 
 **新增能力：读取 PLAN.md + 输出对标 .target-state.json**
 
+#### 与 base-skill 的兼容性
+
+**原则**：始终检查 `docs/PLAN.md` 是否存在，不检查 plan-review-skill 是否安装。
+
+| 情况 | 行为 |
+|------|------|
+| `docs/PLAN.md` 存在 | 读取 milestone，在其下拆 sub-task，输出 milestone + subTask |
+| `docs/PLAN.md` 不存在 | 走原有 Step 1 澄清流程，输出扁平列表 |
+| plan-review-skill 未安装 | 不影响，PLAN.md 可以是用户手动创建的 |
+
+> 注意：PLAN.md 的来源不重要，只需要检查文件是否存在。
+
+#### SKILL.md 改动清单
+
+**新增章节「与 PLAN.md 协同」（~60 行）**：
+
 ```markdown
 ## 与 PLAN.md 协同
 
-### 读取时机
+### 判断规则
 
-拆解前检查是否存在 `docs/PLAN.md`：
-- 存在 → 读取 milestone，在每个 milestone 下拆 sub-task
-- 不存在 → 走原有 Step 1 澄清流程
+拆解前检查项目根目录是否存在 `docs/PLAN.md`：
+- **存在** → 读取 milestone，在其下拆 sub-task
+- **不存在** → 走原有 Step 1 澄清流程
 
-### 继承规则
+### 读取 PLAN.md
 
-| PLAN.md 章节 | task-split 映射 |
-|-------------|----------------|
-| 项目愿景 | 作为大目标 |
-| 里程碑表格 | 作为 subGoals（milestone） |
-| 交付物表格 | 关联到对应 milestone |
-| 风险预判 | 作为 P0 阻塞问题 |
+从 `docs/PLAN.md` 提取：
 
-### 输出格式（对标 .target-state.json）
+| 章节 | 提取内容 |
+|------|---------|
+| `# 项目愿景` | 作为大目标 |
+| `| ID | 里程碑 |` 表格 | milestone 的 id + title |
+| `| ID | 交付物 |` 表格 | 关联到 milestone |
 
-当用户说「开始执行」或「追踪这个计划」时：
+### 输出格式
 
-1. 生成 milestone + subTask 结构
-2. 输出格式：
+有 PLAN.md 时，在每个 milestone 下拆 sub-task，输出 milestone + subTask 结构。
+无 PLAN.md 时，维持原有扁平任务列表。
 
-```json
-{
-  "goal": "项目愿景",
-  "source": "plan-review",
-  "milestones": [
-    {
-      "id": "M1",
-      "title": "数据库设计",
-      "status": "pending",
-      "subTasks": [
-        {
-          "id": "M1-1",
-          "title": "设计用户表 schema",
-          "status": "pending"
-        }
-      ]
-    }
-  ]
-}
+### 触发 target-skill
+
+用户说「开始执行」或「追踪这个计划」时：
+1. 输出 milestone + subTask 结构
+2. 通知用户可使用 target-skill 追踪
+3. 不自动触发（target-skill 由用户主动激活）
 ```
 
-3. 写入 `.target-state.json`
-4. 触发 target-skill 追踪
-```
+#### 改动量
 
-### 6.4 两种输出模式
+| 文件 | 改动 |
+|------|------|
+| SKILL.md | 新增「与 PLAN.md 协同」章节（~60 行） |
+| learns/ | 记录本次调整踩坑（~10 行） |
 
-| 模式 | 触发条件 | 输出 |
-|------|---------|------|
-| 快速拆解 | 用户说「拆解一下」（无 PLAN.md） | 扁平任务列表（维持现状） |
-| 完整拆分 | 用户说「开始执行」（有 PLAN.md） | milestone + subTask 结构（对接 target-skill） |
-
-### 6.5 向后兼容
-
-- 无 PLAN.md 时：完全走原有流程，不受影响
-- 有 PLAN.md 但用户不说「执行」：只输出扁平列表，不触发 target-skill
+**无代码改动。**
 
 ---
 
