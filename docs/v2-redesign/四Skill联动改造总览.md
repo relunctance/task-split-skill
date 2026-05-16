@@ -285,7 +285,27 @@ target-skill：可独立工作（用户手动设定目标）
 
 ---
 
-## 8. 设计原则
+## 9. 与 base-skill 的关系
+
+### 9.1 PLAN skill 是 base-skill 的标配
+
+PLAN skill 是 base-skill 的标配 skill 之一，与 task-split-skill、target-skill、plan-review-skill 共同组成 base-skill 的核心 skill 组合。
+
+```
+base-skill 标配：
+├── task-split-skill（任务拆解）
+├── target-skill（目标追踪）
+├── plan-review-skill（规划评审）
+└── PLAN skill（计划生成）
+```
+
+### 9.2 触发优先级
+
+当用户说「制定计划」时，PLAN skill 优先响应。
+
+---
+
+## 10. 设计原则
 
 1. **各司其职** — 每个 Skill 有且只有一个核心职责
 2. **最小化依赖** — Skill 可独立工作，不强制依赖其他 Skill
