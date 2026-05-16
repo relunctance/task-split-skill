@@ -481,6 +481,8 @@ python task-list.py stats
 | Skipping risk assessment | At minimum, identify the 1-2 most likely failure points |
 | Trigger conflict with OpenSpec | OpenSpec uses `/opsx:` — if user doesn't use that prefix, use task-split |
 
+> **⚠️ 依赖说明**：`task-list.py` 需要 `platform_detect` 模块（非 PyPI 包，是 Hermes 内置）。setup.sh 会自动检测并提示。详见 `references/platform-detect-issue.md`。
+
 ## Installation
 
 ### Hermes
