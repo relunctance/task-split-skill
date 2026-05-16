@@ -225,7 +225,7 @@ Use `task-list.py create "title" --depends 1,2` to establish dependencies.
          └→ [Build page B] ─┘
 ```
 
-Independent tasks can be described by the AI using `task-list.py list` to show dependencies.
+Independent tasks can launch multiple Agents in parallel using `task-list.py tree` to visualize.
 
 #### Diamond Dependency
 
@@ -378,9 +378,13 @@ python task-list.py unblock 3
 
 # 删除任务
 python task-list.py delete 3
-```
 
-**依赖树和统计面板**：直接读 `.task-list.json`，LLM 解析后描述。
+# 依赖树视图
+python task-list.py tree
+
+# 统计面板
+python task-list.py stats
+```
 
 #### 典型工作流
 
@@ -392,8 +396,8 @@ python task-list.py create "实现后端 API" --priority P1 --depends 2
 python task-list.py create "开发前端页面" --priority P2 --depends 2
 python task-list.py create "集成测试" --priority P1 --depends 3,4
 
-# 2. 查看任务列表（LLM 直接读 .task-list.json 描述依赖关系）
-python task-list.py list
+# 2. 查看依赖树
+python task-list.py tree
 
 # 3. 开始 P0/P1 任务（被依赖阻塞的会自动报错）
 python task-list.py start 1
@@ -401,6 +405,9 @@ python task-list.py start 1
 # 4. 完成后标记
 python task-list.py done 1
 python task-list.py start 2
+
+# 5. 查看进度
+python task-list.py stats
 ```
 
 ### 11. Cheatsheet
@@ -450,8 +457,8 @@ python task-list.py start 2
 │  task-list.py:                                          │
 │  create "title" --priority P0 --depends 1,2             │
 │  list --status pending --priority P0                    │
-│  start / done / block / unblock / delete               │
-│  （依赖树/统计 → LLM 直接读 .task-list.json）           │
+│  start / done / block / unblock / delete <id>           │
+│  tree | stats                                            │
 │                                                          │
 │  Granularity:                                            │
 │  ✅ > 5min / 3+ files / 多个方案 → 必须拆解               │
