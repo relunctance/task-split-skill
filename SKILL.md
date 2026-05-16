@@ -14,7 +14,7 @@ category: methodology
 author: relunctance
 created: 2026-05-14
 updated: 2026-05-17
-version: "2.0.0"
+version: "2.1.0"
 license: MIT
 tags:
   - task-management
@@ -179,6 +179,50 @@ Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可
 2. **修改拆解** — 告诉我需要调整哪些任务
 3. **添加任务** — 告诉我需要在哪个 milestone 下添加
 ```
+
+**用户选择「开始执行」后：**
+
+1. **写 `.task-split.json`**：将 milestone + subTask 写入项目根目录
+2. **提示用户**：可以输入「开始执行」触发 target-skill
+
+```markdown
+## ✅ 拆解结果已保存
+
+**文件**：`{项目根目录}/.task-split.json`
+
+**下一步**：
+1. 输入「开始执行」— 触发 target-skill 追踪
+2. 输入「修改拆解」— 调整任务
+```
+
+### .task-split.json 格式
+
+```json
+{
+  "version": "1.0",
+  "goal": "{项目目标}",
+  "source": "PLAN.md",
+  "createdAt": "YYYY-MM-DDTHH:mm:ss+08:00",
+  "milestones": [
+    {
+      "id": "M1",
+      "title": "{标题}",
+      "status": "pending",
+      "subTasks": [
+        {
+          "id": "M1-1",
+          "title": "{任务}",
+          "status": "pending",
+          "priority": "P0",
+          "acceptanceCriteria": "{验收标准}"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**注意**：`.task-split.json` 是 task-split-skill 的输出，target-skill 读取后可转换为 `.target-state.json`。两个文件可以共存。
 
 ---
 
