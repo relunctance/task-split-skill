@@ -16,7 +16,7 @@ AI Agent 任务拆解方法论 — 将模糊需求拆解为可执行、可追踪
 | ❓ **澄清问题模板** | Step 1 必填 4 问，不澄清不拆解 |
 | ✅ **验收标准强制** | 每个子任务必须有可检查的验收条件 |
 | 📐 **粒度控制** | 原子/组合/里程碑三级粒度 + 明确反例 |
-| 🔗 **依赖建模** | 串行、并行分支、菱形依赖 + task-list.py 工具支撑 |
+| 🔗 **依赖建模** | 串行、并行分支、菱形依赖 + task-list.py 工具支撑（树/统计由 LLM 直接读 JSON） |
 | ⚡ **动态调整** | 执行中实时响应变化，插入/合并/删除任务 |
 | 🔄 **Skill 协同** | 拆解是思考过程，Skill 是快捷方式，Memory 是笔记本 |
 
@@ -107,11 +107,8 @@ python task-list.py create "实现后端" --priority P1 --depends 2
 python task-list.py create "前端开发" --priority P2 --depends 2
 python task-list.py create "集成测试" --priority P1 --depends 3,4
 
-# 查看依赖树
-python task-list.py tree
-
-# 查看统计
-python task-list.py stats
+# 查看任务列表（LLM 直接读 .task-list.json 描述依赖关系）
+python task-list.py list
 ```
 
 ---

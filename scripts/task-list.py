@@ -216,93 +216,14 @@ def cmd_delete(tid: int) -> str:
     return f"❌ 未找到任务 #{tid}"
 
 
-def cmd_tree() -> str:
+def cmd_delete(tid: int) -> str:
     tasks = load_tasks()
-    if not tasks:
-        return "📌 暂无任务"
-
-    active = [t for t in tasks if t["status"] != "deleted"]
-    lines = ["## 🌲 任务依赖树"]
-
-    # 找出没有依赖的根任务
-    roots = [t for t in active if not t.get("depends")]
-    completed_ids = {t["id"] for t in active if t["status"] == "completed"}
-
-    def render(tid: int, prefix: str = "", is_last: bool = True) -> list:
-        result = []
-        # 找所有依赖这个任务的任务
-        children = [t for t in active if tid in t.get("depends", [])]
-
-        # 找自己
-        task = next((t for t in active if t["id"] == tid), None)
-        if task is None:
-            return result
-
-        e = STATUS_EMOJI.get(task["status"], "⬜")
-        p = task.get("priority", "P1")
-        pe = PRIORITY_EMOJI.get(p, "⚪")
-        conn = "└── " if is_last else "├── "
-        result.append(f"{prefix}{conn}{e} [{tid}] {pe} {p} {task['title']}")
-
-        child_prefix = prefix + ("    " if is_last else "│   ")
-        for i, child in enumerate(children):
-            is_last_child = (i == len(children) - 1)
-            result.extend(render(child["id"], child_prefix, is_last_child))
-        return result
-
-    rendered = []
-    for i, root in enumerate(roots):
-        is_last_root = (i == len(roots) - 1)
-        rendered.extend(render(root["id"], "", is_last_root))
-
-    if rendered:
-        lines.extend(rendered)
-
-    # 统计
-    done = sum(1 for t in active if t["status"] == "completed")
-    in_prog = sum(1 for t in active if t["status"] == "in_progress")
-    blocked = sum(1 for t in active if t["status"] == "blocked")
-    lines.append(f"\n📊 {done} 完成 | {in_prog} 进行中 | {blocked} 阻塞 | {len(active)} 总计")
-    return "\n".join(lines)
-
-
-def cmd_stats() -> str:
-    tasks = load_tasks()
-    active = [t for t in tasks if t["status"] != "deleted"]
-    if not active:
-        return "📌 暂无任务"
-
-    by_status = {}
-    for t in active:
-        s = t["status"]
-        by_status[s] = by_status.get(s, 0) + 1
-
-    by_priority = {}
-    for t in active:
-        p = t.get("priority", "P1")
-        by_priority[p] = by_priority.get(p, 0) + 1
-
-    lines = ["## 📊 任务统计"]
-    lines.append(f"**总计**: {len(active)} 个任务")
-
-    lines.append("\n按状态：")
-    for s, cnt in sorted(by_status.items()):
-        e = STATUS_EMOJI.get(s, "⬜")
-        lines.append(f"  {e} {s}: {cnt}")
-
-    lines.append("\n按优先级：")
-    for p in ["P0", "P1", "P2", "P3"]:
-        cnt = by_priority.get(p, 0)
-        pe = PRIORITY_EMOJI.get(p, "⚪")
-        if cnt:
-            lines.append(f"  {pe} {p}: {cnt}")
-
-    done = by_status.get("completed", 0)
-    total = len(active)
-    pct = int(done / total * 100) if total else 0
-    lines.append(f"\n完成率：{done}/{total} ({pct}%)")
-
-    return "\n".join(lines)
+    for i, t in enumerate(tasks):
+        if t["id"] == tid:
+            t["status"] = "deleted"
+            save_tasks(tasks)
+            return f"🗑️ 任务「{t['title']}」已删除"
+    return f"❌ 未找到任务 #{tid}"
 
 
 # ─── 主入口 ─────────────────────────────────────────────────────
@@ -342,9 +263,6 @@ def main():
     p_delete = sub.add_parser("delete", help="删除任务")
     p_delete.add_argument("id", type=int, help="任务ID")
 
-    sub.add_parser("tree", help="依赖树视图")
-    sub.add_parser("stats", help="统计面板")
-
     args = parser.parse_args()
 
     if not args.cmd:
@@ -366,10 +284,6 @@ def main():
             print(cmd_unblock(args.id))
         elif args.cmd == "delete":
             print(cmd_delete(args.id))
-        elif args.cmd == "tree":
-            print(cmd_tree())
-        elif args.cmd == "stats":
-            print(cmd_stats())
         else:
             parser.print_help()
     except Exception as e:
