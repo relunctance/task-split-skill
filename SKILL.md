@@ -1,7 +1,6 @@
 ---
 name: task-split-skill
-description: AI Agent task decomposition methodology for breaking complex requests into executable, trackable, verifiable work plans
-description_zh: AI Agent 任务拆解方法论 — 将模糊需求拆解为可执行、可追踪、可验证的工作计划
+description: AI Agent 任务拆解方法论 — 将模糊需求拆解为可执行、可追踪、可验证的工作计划，支持读取 PLAN.md 生成 milestone + subTask
 triggers:
   - 任务拆解
   - 拆解任务
@@ -14,8 +13,8 @@ triggers:
 category: methodology
 author: relunctance
 created: 2026-05-14
-updated: 2026-05-15
-version: "1.2.0"
+updated: 2026-05-17
+version: "2.0.0"
 license: MIT
 tags:
   - task-management
@@ -23,489 +22,208 @@ tags:
   - agent-workflow
   - planning
 platforms:
-  openclaw: true
-  claude_code: true
-  hermes: true
-  cursor: true
-metadata:
-  scripts:
-    - scripts/task-list.py
-    - scripts/setup.sh
+  all: true
+depends_on:
+  - plan-skill
 ---
 
 # task-split-skill
 
 ## Overview
 
-Task Decomposition Methodology — a systematic approach for AI Agents to break down vague user requests into executable, trackable, and verifiable work plans.
+Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可追踪、可验证的工作计划的系统化方法。
 
-任务拆解方法论 — AI Agent 将模糊需求变成可执行、可追踪、可验证的工作计划的系统化方法。
+**两种拆解模式：**
+- **快速拆解**：无 PLAN.md 时，扁平任务列表
+- **完整拆分**：有 PLAN.md 时，在 milestone 下拆 sub-task
 
-## Triggers
+---
 
-> **⚠️ 与 OpenSpec 的触发边界**：OpenSpec 由 `/opsx:` 命令触发，task-split 由自然语言触发。两者互不冲突，OpenSpec 管「开发规范」，task-split 管「任务拆解」。
+## 核心原则：复述 + 人工确认
+
+**所有关键信息必须经过「复述 + 用户确认」流程，LLM 自己理解的不算数。**
+
+---
+
+## 触发条件
 
 | 触发词 | 说明 |
 |--------|------|
-| `任务拆解` / `拆解任务` | 核心触发词 |
-| `拆解成` / `分解成` | 带目标句式，如「拆解成 N 个子任务」 |
+| `任务拆解` / `拆解任务` | 核心触发 |
+| `拆解成` / `分解成` | 带目标句式 |
 | `工作分解` / `WBS` | 专业术语 |
-| `task decomposition` / `task split` | 英文触发 |
+| `开始执行` / `执行计划` | 触发完整拆分 |
 
-**不触发**（这些是 OpenSpec 或其他 skill 的领域）：
-- `/opsx:` 开头的命令 → OpenSpec
-- `制定开发规范` / `写 SPEC` → OpenSpec
-- `目标追踪` / `目标管理` → target-skill
+**不触发：**
 
-## Content
+| 不触发 | 原因 |
+|--------|------|
+| `制定计划` / `写 PLAN` | → PLAN skill |
+| `评审计划` / `review PLAN` | → plan-review-skill |
+| `追踪目标` / `track goal` | → target-skill |
 
-### 1. Why Task Decomposition
+---
 
-| Problem | Without | With |
-|---------|---------|------|
-| Wrong direction | Discover misalignment after completion | Expose ambiguity during decomposition |
-| Opaque progress | User waits for final result | Visible progress at every step |
-| Risk accumulation | Errors compound at the end | Each step validated independently |
-| Context loss | Start over after interruption | Resume from task list seamlessly |
-| Parallelism | Only serial execution | Independent subtasks run concurrently |
+## 两种拆解模式
 
-### 2. Five-Step Decomposition Flow
+### 模式判断
 
 ```
-User Request (vague)
-    │
-    ▼
-┌─────────────────────────┐
-│ Step 1: Clarify Questions │  ← 必须先问清楚，不清楚不拆解
-│         (Question Template)│
-└──────────┬──────────────┘
-           ▼
-┌─────────────────────────┐
-│ Step 2: Identify         │  → What files/features to deliver?
-│         Deliverables     │  → Acceptance criteria for each (MANDATORY)
-└──────────┬──────────────┘
-           ▼
-┌─────────────────────────┐
-│ Step 3: Break Down       │  → Order by dependency (topological)
-│         & Order          │  → Identify parallel branches
-│                          │  → Each task < 15 min ideal
-└──────────┬──────────────┘
-           ▼
-┌─────────────────────────┐
-│ Step 4: Risk Assessment  │  → Which steps might fail?
-│         & Defense        │  → Where does user confirmation needed?
-│                          │  → What is Plan B?
-└──────────┬──────────────┘
-           ▼
-┌─────────────────────────┐
-│ Step 5: Create Task List │  → task-list.py create for each item
-│         & Track          │  → --depends for dependencies
-│                          │  → Execute + real-time status update
-└─────────────────────────┘
+拆解前检查 docs/PLAN.md 是否存在：
+├── 存在 → 进入「完整拆分」模式
+└── 不存在 → 进入「快速拆解」模式
 ```
 
-### 3. Clarify Question Template (Step 1 必填)
+---
 
-> **每任务拆解前必须完成 Step 1 的 4 个问题，未澄清前不进入 Step 2。**
+## 快速拆解模式（无 PLAN.md）
 
-```
-## 澄清问题（每任务必答）
-
-1. 最终交付物是什么？
-   → 文件 / 功能模块 / 文档 / API endpoint / 配置项
-   → 具体路径或位置（如：src/auth/login.ts）
-
-2. 成功标准是什么？
-   → 可运行 / 可部署 / 评审通过
-   → 具体可检查的指标（如：登录成功返回 200，失败返回 401）
-
-3. 限制条件有哪些？
-   → 技术栈限制 / 时间限制 / 兼容性要求 / 安全约束
-   → 如无限制，明确写「无特殊限制」
-
-4. MVP 范围 vs 完整版范围？
-   → 必须有的（MVP）：...
-   → 可以有的（后续迭代）：...
-   → 绝对不能有的：...
-```
-
-**什么时候可以跳过 Step 1？**
-- 用户需求已经非常具体（不超过 2 句话，包含明确动词+对象）
-- 示例：「把 users.ts 里的 `getUserById` 改成 async/await」→ 直接拆解
-
-### 4. Deliverables & Acceptance Criteria (Step 2 强制)
-
-> **每个子任务必须有验收标准，无验收标准则任务不完整。**
+### Step 1：澄清问题
 
 ```markdown
-## 交付物清单
+## 澄清问题（必须先问）
 
-### 交付物 1：[具体名称]
-**文件/位置**：
-**验收标准**：
-- [ ] 标准 1（具体、可执行检查）
-- [ ] 标准 2（包含预期结果）
-- [ ] 标准 3（边界条件）
+1. 最终交付物是什么？
+2. 成功标准是什么？
+3. 限制条件有哪些？
+4. MVP vs 完整版？
 ```
 
-```
-❌ Bad: "功能正常运行"
-✅ Good: "POST /api/login 返回 200 + token 字段；空 body 返回 400；密码错误返回 401"
+### Step 2：识别交付物
 
-❌ Bad: "完善文档"
-✅ Good: "README.md 包含：安装步骤（3步）、快速开始（2个命令）、troubleshooting（4个常见问题）"
-```
+每个子任务必须有验收标准。
 
-### 5. Granularity Principles
+### Step 3：分解排序
 
-#### When to Decompose
+按依赖关系排序，识别并行分支。
 
-```
-✅ Must decompose:
-├── Modifying 3+ files
-├── Clear sequential dependencies (A before B)
-├── Uncertain factors (needs research first)
-├── Execution time > 5 minutes
-├── Multiple possible approaches (needs decision)
-└── User needs to see intermediate progress
+### Step 4：风险预判
 
-❌ MUST NOT decompose (skip decomposition entirely):
-├── Single-line fix (typo, missing semicolon)
-├── Pure information lookup (read file, check docs, grep)
-├── Simple formatting adjustment (prettier, lint fix)
-├── User explicitly says "just do it" for simple tasks
-├── Output is a single command or API call
-└── Task is already a single atomic action (< 2 min)
+识别最可能的失败点。
+
+### Step 5：输出任务列表
+
+```markdown
+## 拆解结果
+
+**项目**：{目标}
+**模式**：快速拆解
+
+### 任务列表
+
+| ID | 任务 | 验收标准 | 优先级 | 依赖 |
+|----|------|---------|--------|------|
+| 1 | {任务} | {标准} | P0 | — |
+| 2 | {任务} | {标准} | P1 | #1 |
 ```
 
-#### Granularity Reference
+---
 
-| Level | Example | Use Case |
-|-------|---------|----------|
-| **Atomic** | "Fix STATUS.md regex `[a-z]` → `[a-z][^\|]+`" | Specific code change |
-| **Composite** | "Implement README update in create_role.py" | One logical unit |
-| **Milestone** | "Complete CLI scaffold (template→validate→update docs)" | Deliverable feature |
+## 完整拆分模式（有 PLAN.md）
 
-#### Golden Rule
+### Step 1：读取 PLAN.md + 复述确认
 
-> **A task description should be executable by another Agent without additional context.**
+```markdown
+## 我对 PLAN.md 的理解
 
-```
-❌ Bad: "Improve documentation"
-✅ Good: "Append new role row to docs/STATUS.md table, format: | role-name | description | ✅ |"
+**目标**：{LLM 理解的目标}
 
-❌ Bad: "Handle config file"
-✅ Good: "Replace name: my-role with user-specified role name in templates/role-template/config.yaml"
+**里程碑**：
+- M1：{标题} — 验收标准：{标准}
+- M2：{标题} — 验收标准：{标准}
 
-❌ Bad: "Add error handling"
-✅ Good: "Add try/catch around db.query() in src/db/user.go; on exception log error and return ErrDatabase"
+**交付物**：{交付物列表}
+
+请确认以上理解是否正确，如有出入请告诉我。
 ```
 
-Task description template:
-```
-[verb] + [object] + [specific file/path] + [exact change] + [acceptance criteria]
-```
+### Step 2：在 milestone 下拆 sub-task
 
-### 6. Dependency Modeling
+```markdown
+### M1：{标题}
 
-#### Serial Dependency (most common)
-
-```
-[Research API docs] → [Design data model] → [Implement backend] → [Build frontend]
-       ①                    ②                    ③                  ④
+| ID | sub-task | 验收标准 | 优先级 |
+|----|---------|---------|--------|
+| M1-1 | {任务} | {标准} | P0 |
+| M1-2 | {任务} | {标准} | P1 |
 ```
 
-Use `task-list.py create "title" --depends 1,2` to establish dependencies.
+### Step 3：输出 milestone + subTask
 
-#### Parallel Branches (efficiency key)
+```markdown
+## 拆解结果
 
-```
-         ┌→ [Build page A] ─┐
-[Design] ┤                   ├→ [Integration test]
-         └→ [Build page B] ─┘
-```
+**项目**：{目标}
+**模式**：完整拆分（基于 PLAN.md）
 
-Independent tasks can launch multiple Agents in parallel using `task-list.py tree` to visualize.
+### Milestone + Sub-task
 
-#### Diamond Dependency
+**M1：{标题}**
+| ID | sub-task | 验收标准 | 优先级 | 状态 |
+|----|---------|---------|--------|------|
+| M1-1 | {任务} | {标准} | P0 | pending |
+| M1-2 | {任务} | {标准} | P1 | pending |
 
-```
-[Backend API dev] ──┐
-                    ├──→ [Frontend-Backend integration]
-[Frontend dev]    ──┘
-```
-
-Two branches converge at an integration point. Either branch failure blocks convergence.
-
-### 7. Dynamic Adjustment During Execution
-
-#### Task State Flow
-
-```
-pending → in_progress → completed
-                        → pending (rollback & redo)
-                        → deleted (no longer needed)
+**M2：{标题}**
+| ID | sub-task | 验收标准 | 优先级 | 状态 |
+|----|---------|---------|--------|------|
+| M2-1 | {任务} | {标准} | P0 | pending |
 ```
 
-#### Common Adjustment Scenarios
+### Step 4：后续选项
 
-| Scenario | Action |
-|----------|--------|
-| Discover prerequisite | Pause current task, insert new prerequisite |
-| Task no longer needed | Mark deleted, unblock downstream |
-| Better approach found | Record new approach in description, continue |
-| Over-decomposed | Merge related tasks to reduce switching |
-|| Blocked (need user input) | Pause task, use AskUserQuestion |
+```markdown
+### 下一步
 
-### 7.1 执行闭环
-
-> **拆解后不执行 = 白拆解。**
-
-#### 拆解后的执行方式
-
-| 任务类型 | 执行方式 |
-|---------|---------|
-| 单 agent 可完成 | AI 按任务列表顺序执行，实时用 `task-list.py` 更新状态 |
-| 多角色协作 | 通过 `delegate_task` 分发给 sub-agent，并行执行 |
-| 需要用户确认 | 在关键节点暂停，用 AskUserQuestion |
-
-#### 执行时状态同步规则
-
-每次完成任务后：
-1. `task-list.py done <id>` 更新状态
-2. 重新评估剩余任务的优先级和依赖关系
-3. 如有任务被新任务阻塞，立即反馈给用户
-4. 所有 P0 任务完成后，通知用户
-
-#### 触发 target-skill 的条件
-
-满足以下任一条件时，提示用户激活 target-skill：
-- 总任务数 > 5
-- 预计总时长 > 1 小时
-- 需要跨 session 继续执行
-
-### 8. Relationship with Other Skills
-
-#### 与 target-skill 的边界
-
-| Skill | 职责 | 触发时机 |
-|-------|------|---------|
-| **task-split** | 将需求拆解为可执行子任务 | 用户说「拆解」「分解」「规划一下」 |
-| **target-skill** | 追踪长期目标，抗偏移 | 用户说「追踪目标」「当前进度」「目标是什么」 |
-
-**协作协议**：task-split 拆解完成后，如果用户说「开始执行」或「追踪这个计划」，自动触发 target-skill。
-
-#### 与 plan-review-skill 的边界
-
-| Skill | 职责 | 触发时机 |
-|-------|------|---------|
-| **task-split** | 拆解任务为子任务列表 | 需求已澄清，需要执行计划 |
-| **plan-review-skill** | 评审计划的风险和可交付性 | 计划已产出，需要评审确认 |
-
-**协作协议**：大型项目先用 task-split 拆解 → 对核心模块用 plan-review-skill 评审 → 评审通过后交给 target-skill 追踪执行。
-
-> 详细联动协议见 `references/methodology-integration.md`
-
-#### 与 skill-created 的关系
-
-```
-User Request
-    │
-    ▼
-Task Decomposition
-    │
-    ├── Subtask A ──→ Match existing Skill?
-    │                 ├── ✅ Invoke directly (instant)
-    │                 └── ❌ Manual execution
-    │
-    └── After completion → Is this flow reusable?
-                            ├── ✅ Use skill-created to extract as new Skill
-                            └── ❌ Update Memory only
+1. **开始执行** — 使用 target-skill 追踪
+2. **修改拆解** — 告诉我需要调整哪些任务
+3. **添加任务** — 告诉我需要在哪个 milestone 下添加
 ```
 
-**Key distinctions:**
-- **Task Decomposition** = "Thinking process" that runs every time (never skip)
-- **Skill** = "Shortcut" for decomposition results (use if available)
-- **Memory** = "Notebook" of lessons learned (reference next time)
+---
 
-### 9. Priority Definitions
+## 与其他 Skill 的关系
 
-| Priority | Meaning | Response |
-|----------|---------|----------|
-| **P0** | 阻断性问题，必须立即解决 | 停下手头所有工作，先处理 P0 |
-| **P1** | 核心功能，影响主流程 | 尽快完成，不阻塞其他 P1 |
-| **P2** | 重要但不紧急 | 按正常流程完成 |
-| **P3** | 增强/优化 | 有余力再做 |
+### 与 PLAN skill 的关系
 
-**Decision rule**: If you can't decide between P0 and P1, ask the user.
+```
+PLAN skill 生成 docs/PLAN.md
+          ↓
+task-split-skill 读取 docs/PLAN.md
+          ↓
+拆解任务
+```
 
-### 10. task-list.py CLI Reference
+### 与 plan-review-skill 的关系
 
-> **依赖建模和任务追踪的唯一工具**。每个子任务创建后必须用 task-list.py 管理，不允许用其他方式追踪。
+```
+plan-review-skill 评审通过
+          ↓
+task-split-skill 拆解任务
+```
 
-#### 安装脚本
+### 与 target-skill 的关系
+
+```
+task-split-skill 拆解完成
+          ↓
+用户说「开始执行」
+          ↓
+target-skill 追踪 milestone + sub-task
+```
+
+---
+
+## 版本字段
+
+| 文件 | 版本字段 | 位置 |
+|------|---------|------|
+| `docs/PLAN.md` | `version` | frontmatter |
+
+---
+
+## 安装
 
 ```bash
-# 自动安装（推荐）
-bash ~/repos/task-split-skill/scripts/setup.sh
-
-# 或手动同步
-python3 ~/repos/skill-sync/scripts/sync-hermes-skills.py task-split-skill
-```
-
-#### 命令行接口
-
-```bash
-# 创建任务（依赖用逗号分隔的 ID）
-python task-list.py create "任务标题" --priority P0 --depends 1,2
-
-# 列举任务（可选：按状态/优先级过滤）
-python task-list.py list                          # 所有任务
-python task-list.py list --status pending         # 仅待完成
-python task-list.py list --priority P0            # 仅 P0
-
-# 开始任务（自动检查依赖是否完成）
-python task-list.py start 1
-
-# 完成任务
-python task-list.py done 1
-
-# 阻塞任务（标记依赖）
-python task-list.py block 3 --by 1,2
-
-# 解除阻塞
-python task-list.py unblock 3
-
-# 删除任务
-python task-list.py delete 3
-
-# 依赖树视图
-python task-list.py tree
-
-# 统计面板
-python task-list.py stats
-```
-
-#### 典型工作流
-
-```bash
-# 1. 拆解完成后，创建所有任务
-python task-list.py create "调研 API 文档" --priority P1
-python task-list.py create "设计数据模型" --priority P1 --depends 1
-python task-list.py create "实现后端 API" --priority P1 --depends 2
-python task-list.py create "开发前端页面" --priority P2 --depends 2
-python task-list.py create "集成测试" --priority P1 --depends 3,4
-
-# 2. 查看依赖树
-python task-list.py tree
-
-# 3. 开始 P0/P1 任务（被依赖阻塞的会自动报错）
-python task-list.py start 1
-
-# 4. 完成后标记
-python task-list.py done 1
-python task-list.py start 2
-
-# 5. 查看进度
-python task-list.py stats
-```
-
-### 11. Cheatsheet
-
-```
-┌──────────────────────────────────────────────────────────┐
-│              TASK DECOMPOSITION CHEATSHEET               │
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│  Triggers (自然语言触发):                                 │
-│  ├── 任务拆解 / 拆解任务 / 拆解成                         │
-│  ├── 工作分解 / WBS                                      │
-│  └── task decomposition / task split                    │
-│  ⚠️ 不触发：/opsx: 命令 → OpenSpec                       │
-│                                                          │
-│  ─────────────────────────────────────────────────────   │
-│                                                          │
-│  5-Step Flow:                                            │
-│  ① 澄清问题 → ② 识别交付物 → ③ 分解排序                 │
-│  ④ 风险预判 → ⑤ 执行追踪                                 │
-│                                                          │
-│  ─────────────────────────────────────────────────────   │
-│                                                          │
-│  Step 1 必填（4个问题）：                                 │
-│  ① 最终交付物是什么？                                     │
-│  ② 成功标准是什么？                                       │
-│  ③ 限制条件有哪些？                                       │
-│  ④ MVP vs 完整版？                                       │
-│                                                          │
-│  ─────────────────────────────────────────────────────   │
-│                                                          │
-│  Step 2 必填（每个子任务）：                               │
-│  ## 验收标准                                            │
-│  - [ ] 具体条件1                                         │
-│  - [ ] 具体条件2                                         │
-│                                                          │
-│  ─────────────────────────────────────────────────────   │
-│                                                          │
-│  Task description:                                       │
-│  [verb] + [object] + [file/path] + [exact change]      │
-│                                                          │
-│  Priority:                                               │
-│  P0 = 阻断优先 | P1 = 核心尽快 | P2/P3 = 有余力           │
-│                                                          │
-│  ─────────────────────────────────────────────────────   │
-│                                                          │
-│  task-list.py:                                          │
-│  create "title" --priority P0 --depends 1,2             │
-│  list --status pending --priority P0                    │
-│  start / done / block / unblock / delete <id>           │
-│  tree | stats                                            │
-│                                                          │
-│  Granularity:                                            │
-│  ✅ > 5min / 3+ files / 多个方案 → 必须拆解               │
-│  ❌ 单行fix / 纯查询 / "just do it" → 不拆解             │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
-```
-
-## Pitfalls
-
-| Issue | Solution |
-|-------|----------|
-| Over-decomposition into micro-tasks | Merge tasks that share the same file/context |
-| Under-decomposition (vague tasks) | Apply golden rule: description must be self-contained |
-| Missing dependencies | Always ask "what must finish before this?" |
-| Skipping Step 1 Clarify | Treat Clarify as mandatory for anything beyond 2 sentences |
-| No acceptance criteria | Reject the decomposition until every task has checkable criteria |
-| Not updating status | Treat status update as part of the task, not optional |
-| Ignoring parallel opportunities | Always check "can any of these run simultaneously?" |
-| Skipping risk assessment | At minimum, identify the 1-2 most likely failure points |
-| Trigger conflict with OpenSpec | OpenSpec uses `/opsx:` — if user doesn't use that prefix, use task-split |
-
-> **⚠️ 依赖说明**：`task-list.py` 需要 `platform_detect` 模块（非 PyPI 包，是 Hermes 内置）。setup.sh 会自动检测并提示。详见 `references/platform-detect-issue.md`。
-
-## Installation
-
-### Hermes
-```bash
-mkdir -p ~/.hermes/skills/task-split
-cp SKILL.md ~/.hermes/skills/task-split/
-# 安装依赖脚本（可选）
-bash scripts/setup.sh
-```
-
-### OpenClaw
-```bash
-clawhub install task-split
-```
-
-### Claude Code
-```bash
-mkdir -p ~/claude/skills/task-split
-cp SKILL.md ~/claude/skills/task-split/
-```
-
-### Cursor
-```bash
-mkdir -p .cursor/rules
-cp SKILL.md .cursor/rules/task-split.md
+git clone https://github.com/relunctance/task-split-skill.git ~/repos/task-split-skill
 ```
