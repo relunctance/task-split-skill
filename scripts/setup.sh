@@ -10,7 +10,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 SKILL_SYNC="$REPO_DIR/skill-sync/scripts/sync-hermes-skills.py"
 
-# Hermes（推荐方式）
+# ─── 前置依赖 ───────────────────────────────────────────────────
+# platform-detect: Hermes 内置模块，非 Hermes 环境需安装
+if python3 -c "import platform_detect" 2>/dev/null; then
+    echo "[deps] platform-detect ✅"
+else
+    echo "[deps] platform-detect ❌ 未安装，尝试安装..."
+    pip install platform-detect -q && echo "[deps] platform-detect ✅ 安装成功" || echo "[deps] platform-detect ⚠️ 安装失败，请手动: pip install platform-detect"
+fi
+
+# ─── Skill 安装 ─────────────────────────────────────────────────
 if [ -f "$SKILL_SYNC" ]; then
     echo "[Hermes] 使用 skill-sync 同步..."
     python3 "$SKILL_SYNC" task-split-skill
