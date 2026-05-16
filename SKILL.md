@@ -14,7 +14,7 @@ category: methodology
 author: relunctance
 created: 2026-05-14
 updated: 2026-05-17
-version: "2.1.0"
+version: "2.2.0"
 license: MIT
 tags:
   - task-management
@@ -78,10 +78,55 @@ Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可
 
 ## 快速拆解模式（无 PLAN.md）
 
+### Step 0：项目上下文感知（拆解前必做）
+
+**如果项目目录已有内容，先理解项目再拆解：**
+
+```markdown
+## 🔍 项目上下文感知
+
+正在分析项目结构...
+
+**检测到的信息**：
+- 技术栈：{package.json → React, requirements.txt → Python/FastAPI, go.mod → Go...}
+- 项目结构：{src/, lib/, api/, docs/...}
+- 现有代码模式：{existing patterns if readable}
+
+**问题**：
+1. 这个项目是 {技术栈} 的 {webapi/前端/CLI/库} 吗？
+2. 现有代码有什么值得注意的模式？
+3. 这次任务会影响哪些现有模块？
+
+请告诉我以上信息是否准确，或纠正我的理解。
+```
+
+**项目上下文检测清单：**
+
+| 检测项 | 命令/方法 | 说明 |
+|--------|---------|------|
+| 技术栈 | `package.json` / `requirements.txt` / `go.mod` / `Cargo.toml` / `pom.xml` | 识别主要技术栈 |
+| 项目结构 | `ls` 根目录 | 识别 src/, lib/, api/, docs/ 等 |
+| 框架 | 读 `package.json` 的 dependencies | React/Vue/Express 等 |
+| 代码模式 | 抽检 2-3 个现有文件 | 了解项目规范 |
+| 配置 | `.env.example` / `config/` | 了解配置模式 |
+
+**如果项目为空（新目录）：**
+
+```markdown
+## 🔍 项目上下文感知
+
+这是一个新项目。请告诉我：
+1. 主要技术栈是什么？（Python/FastAPI, Node/Express, Go, etc.）
+2. 项目类型？（Web API, CLI 工具, 前端应用, 库/SDK...）
+3. 有特殊项目规范吗？
+```
+
 ### Step 1：澄清问题
 
 ```markdown
 ## 澄清问题（必须先问）
+
+基于对项目的理解，请回答：
 
 1. 最终交付物是什么？
 2. 成功标准是什么？
@@ -120,6 +165,26 @@ Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可
 ---
 
 ## 完整拆分模式（有 PLAN.md）
+
+### Step 0：项目上下文感知（与快速模式相同）
+
+在读取 PLAN.md 前，先了解项目当前状态：
+
+```markdown
+## 🔍 项目上下文感知
+
+正在分析项目结构...
+
+**检测到的信息**：
+- 技术栈：{package.json → React, requirements.txt → Python/FastAPI...}
+- 项目结构：{src/, lib/, api/, docs/...}
+
+**问题**：
+1. 这个项目是 {技术栈} 的 {webapi/前端/CLI/库} 吗？
+2. 现有代码有什么值得注意的模式？
+
+请告诉我以上信息是否准确。
+```
 
 ### Step 1：读取 PLAN.md + 复述确认
 
