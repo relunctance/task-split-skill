@@ -255,22 +255,56 @@ pending → in_progress → completed
 | Task no longer needed | Mark deleted, unblock downstream |
 | Better approach found | Record new approach in description, continue |
 | Over-decomposed | Merge related tasks to reduce switching |
-| Blocked (need user input) | Pause task, use AskUserQuestion |
+|| Blocked (need user input) | Pause task, use AskUserQuestion |
+
+### 7.1 执行闭环
+
+> **拆解后不执行 = 白拆解。**
+
+#### 拆解后的执行方式
+
+| 任务类型 | 执行方式 |
+|---------|---------|
+| 单 agent 可完成 | AI 按任务列表顺序执行，实时用 `task-list.py` 更新状态 |
+| 多角色协作 | 通过 `delegate_task` 分发给 sub-agent，并行执行 |
+| 需要用户确认 | 在关键节点暂停，用 AskUserQuestion |
+
+#### 执行时状态同步规则
+
+每次完成任务后：
+1. `task-list.py done <id>` 更新状态
+2. 重新评估剩余任务的优先级和依赖关系
+3. 如有任务被新任务阻塞，立即反馈给用户
+4. 所有 P0 任务完成后，通知用户
+
+#### 触发 target-skill 的条件
+
+满足以下任一条件时，提示用户激活 target-skill：
+- 总任务数 > 5
+- 预计总时长 > 1 小时
+- 需要跨 session 继续执行
 
 ### 8. Relationship with Other Skills
 
-#### 与 OpenSpec 的边界
+#### 与 target-skill 的边界
 
-| Skill | 职责 | 触发方式 |
+| Skill | 职责 | 触发时机 |
 |-------|------|---------|
-| **task-split** | 将需求拆解为可执行子任务 | 自然语言 |
-| **OpenSpec** | 定义开发规范和标准 | `/opsx:` 命令 |
-| **target-skill** | 追踪长期目标，抗偏移 | 用户主动开启追踪 |
+| **task-split** | 将需求拆解为可执行子任务 | 用户说「拆解」「分解」「规划一下」 |
+| **target-skill** | 追踪长期目标，抗偏移 | 用户说「追踪目标」「当前进度」「目标是什么」 |
 
-**协作建议**：
-- 大需求 → 先 task-split 拆解 → 对核心模块用 OpenSpec 定义规范
-- task-split 的输出（子任务列表）可以作为 target-skill 的输入
-- 如果 target-skill 标记某个目标为 P3，但 task-split 拆出 P0 子任务 → **以 task-split 的优先级为准**，但提醒用户目标与任务的优先级不一致
+**协作协议**：task-split 拆解完成后，如果用户说「开始执行」或「追踪这个计划」，自动触发 target-skill。
+
+#### 与 plan-review-skill 的边界
+
+| Skill | 职责 | 触发时机 |
+|-------|------|---------|
+| **task-split** | 拆解任务为子任务列表 | 需求已澄清，需要执行计划 |
+| **plan-review-skill** | 评审计划的风险和可交付性 | 计划已产出，需要评审确认 |
+
+**协作协议**：大型项目先用 task-split 拆解 → 对核心模块用 plan-review-skill 评审 → 评审通过后交给 target-skill 追踪执行。
+
+> 详细联动协议见 `references/methodology-integration.md`
 
 #### 与 skill-created 的关系
 
