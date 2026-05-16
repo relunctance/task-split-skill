@@ -82,11 +82,20 @@ target-skill（接管追踪）
 
 | 情况 | 行为 |
 |------|------|
-| `docs/PLAN.md` 存在 | 读取 milestone，在其下拆 sub-task，输出 milestone + subTask |
-| `docs/PLAN.md` 不存在 | 走原有 Step 1 澄清流程，输出扁平列表 |
+| `docs/PLAN.md` 存在且格式正确 | 读取 milestone，在其下拆 sub-task |
+| `docs/PLAN.md` 存在但格式混乱 | **忽略 PLAN.md，走原有 Step 1**（不报错，不卡住） |
+| `docs/PLAN.md` 不存在 | 走原有 Step 1 澄清流程 |
 | plan-review-skill 未安装 | 不影响，PLAN.md 可以是用户手动创建的 |
 
-> 注意：PLAN.md 的来源不重要，只需要检查文件是否存在。
+> 格式错误时 fallback 到 Step 1，不需要用户修复，不需要 PLAN skill。
+
+## 判断规则
+
+拆解前检查项目根目录是否存在 `docs/PLAN.md`：
+- **存在** → 尝试读取 milestone
+  - 成功 → 在 milestone 下拆 sub-task
+  - **失败（格式混乱）→ 走原有 Step 1**
+- **不存在** → 走原有 Step 1 澄清流程
 
 ## 实施顺序
 
