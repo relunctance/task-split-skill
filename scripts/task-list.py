@@ -11,19 +11,34 @@ task-list — 任务列表管理脚本
   python task-list.py tree
   python task-list.py stats
 
-状态文件：通过 platform_detect.state_file() 获取（平台自适应，profile/workspace 隔离）
+状态文件：跨平台自适应，优先用户目录，fallback 当前目录
 """
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
 
-from platform_detect import state_file
+# ─── 跨平台状态文件路径 ───────────────────────────────────────────
+# 优先用户目录，fallback 当前目录
+_USER_STATE = Path.home() / ".task-list.json"
+_CWD_STATE = Path(".task-list.json")
 
-STATE_FILE = state_file(".task-list.json")
+def _get_state_file() -> Path:
+    """优先使用用户目录，确保不同工作目录下共享同一状态文件。"""
+    try:
+        # 用户目录可写 → 用用户目录
+        if os.access(Path.home(), os.W_OK):
+            return _USER_STATE
+    except Exception:
+        pass
+    # fallback 当前目录
+    return _CWD_STATE
+
+STATE_FILE = _get_state_file()
 BACKUP_FILE = STATE_FILE.with_suffix(".json.bak")
 
 
