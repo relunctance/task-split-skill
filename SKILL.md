@@ -14,7 +14,7 @@ category: methodology
 author: relunctance
 created: 2026-05-14
 updated: 2026-05-17
-version: "2.4.0"
+version: "2.5.0"
 license: MIT
 tags:
   - task-management
@@ -239,10 +239,42 @@ Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可
 ```markdown
 ### M1：{标题}
 
-| ID | sub-task | 验收标准 | 优先级 |
-|----|---------|---------|--------|
-| M1-1 | {任务} | {标准} | P0 |
-| M1-2 | {任务} | {标准} | P1 |
+|| ID | sub-task | 验收标准 | 优先级 |
+||----|---------|---------|---------|
+|| M1-1 | {任务} | {标准} | P0 |
+|| M1-2 | {任务} | {标准} | P1 |
+```
+
+### Step 2.5：验收标准必须为 L3（可测试命令）
+
+**规则**：每个 subTask 的验收标准必须是 L3（可测试命令）。
+
+| 等级 | 定义 | 例子 | 行为 |
+|------|------|------|------|
+| L3 可测试 | 有确定性命令，返回明确结果 | `pytest tests/ -v` 返回 PASSED | ✅ 合格 |
+| L2 模糊 | 有验收条件但无法自动判断 | 「配置合理」「代码规范」 | ❌ 不合格 |
+| L1 无 | 无任何验收条件 | 「完成开发」「完善功能」 | ❌ 不合格 |
+
+**常见 L3 验收标准模板**：
+
+| subTask 类型 | L3 验收标准模板 | 示例 |
+|-------------|----------------|------|
+| CLI 命令 | `{命令}; echo $? 输出 0` | `ruff check src/; echo $? 输出 0` |
+| 文件存在 | `test -f {path}` | `test -f flows/demo3.toml` |
+| 配置内容 | `grep '{keyword}' {path}` | `grep 'plan\|implement\|test' flows/demo3.toml` |
+| JSON 字段 | `{命令} 输出包含 {field}` | `team status demo 输出包含 current_phase` |
+| 测试通过 | `pytest {path} -v` | `pytest tests/ -v` |
+| 端到端 | `{完整流程} 返回 {预期}` | `create → advance × 2 → status 返回 current_phase=test` |
+
+**判断 SOP**：
+
+```
+生成验收标准后
+    ↓
+检查是否为 L3：
+├── 有具体命令 → ✅ 合格
+└── 无命令或模糊 → ❌ 拒绝，输出：
+    「验收标准【{模糊内容}】不可测试。建议改为：{L3模板}」
 ```
 
 ### Step 3：输出 milestone + subTask
@@ -446,6 +478,10 @@ target-skill 追踪 milestone + sub-task
 | `docs/PLAN.md` | `version` | frontmatter |
 
 ---
+
+## 参考资料
+
+- [subTask 验收标准规范](references/subtask-acceptance-standard.md) — L3/L2/L1 分级，合格/不合格示例，与 target-skill v3 的契约
 
 ## 安装
 
