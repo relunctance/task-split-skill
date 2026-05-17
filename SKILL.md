@@ -24,7 +24,7 @@ tags:
 platforms:
   all: true
 depends_on:
-  - plan-skill
+  - plan-skill  # https://github.com/relunctance/plan-skill
 ---
 
 # task-split-skill
@@ -59,8 +59,8 @@ Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可
 | 不触发 | 原因 |
 |--------|------|
 | `制定计划` / `写 PLAN` | → PLAN skill |
-| `评审计划` / `review PLAN` | → plan-review-skill |
-| `追踪目标` / `track goal` | → target-skill |
+| `评审计划` / `review PLAN` | → [plan-review-skill](https://github.com/relunctance/plan-review-skill) |
+| `追踪目标` / `track goal` | → [target-skill](https://github.com/relunctance/target-skill) |
 
 ---
 
@@ -240,7 +240,7 @@ Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可
 ```markdown
 ### 下一步
 
-1. **开始执行** — 使用 target-skill 追踪
+1. **开始执行** — 使用 [target-skill](https://github.com/relunctance/target-skill) 追踪
 2. **修改拆解** — 告诉我需要调整哪些任务
 3. **添加任务** — 告诉我需要在哪个 milestone 下添加
 ```
@@ -248,7 +248,7 @@ Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可
 **用户选择「开始执行」后：**
 
 1. **写 `.task-split.json`**：将 milestone + subTask 写入项目根目录
-2. **提示用户**：可以输入「开始执行」触发 target-skill
+2. **提示用户**：可以输入「开始执行」触发 [target-skill](https://github.com/relunctance/target-skill)
 
 ```markdown
 ## ✅ 拆解结果已保存
@@ -303,7 +303,7 @@ task-split-skill 读取 docs/PLAN.md
 拆解任务
 ```
 
-### 与 plan-review-skill 的关系
+### 与 [plan-review-skill](https://github.com/relunctance/plan-review-skill) 的关系
 
 ```
 plan-review-skill 评审通过
