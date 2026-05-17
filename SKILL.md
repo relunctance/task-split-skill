@@ -352,6 +352,25 @@ Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可
 3. **添加任务** — 告诉我需要在哪个 milestone 下添加
 ```
 
+### 触发链提示（v2.6 新增）
+
+task-split-skill 完成后，会自动提示用户下一步操作：
+
+```markdown
+## ✅ 拆解完成
+
+**文件**：`.task-split.json`
+**milestones**：{N} 个
+**subTasks**：{M} 个
+
+**触发链**：
+1. 评审通过 → task-split-skill 拆解 → .task-split.json
+2. 用户说「开始执行」→ target-skill 接管 → 开始追踪
+
+**下一步**：
+请说「开始执行」触发 target-skill 开始追踪。
+```
+
 **用户选择「开始执行」后：**
 
 1. **写 `.task-split.json`**：将 milestone + subTask 写入项目根目录
