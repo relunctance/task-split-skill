@@ -14,7 +14,7 @@ category: methodology
 author: relunctance
 created: 2026-05-14
 updated: 2026-05-17
-version: "2.5.0"
+version: "2.6.0"
 license: MIT
 tags:
   - task-management
@@ -217,6 +217,39 @@ Task Decomposition Methodology — AI Agent 将模糊需求变成可执行、可
 | 用户说「拆解 M2」 | 进入锚点拆解，只拆 M2 范围 |
 | 用户说「拆解整个计划」 | 进入整文件拆解 |
 | 用户没说范围 | 询问「要拆解哪个范围？」 |
+
+### Step 0.6：验收标准 L3 检查与自动转换
+
+读取 PLAN.md 里程碑的验收标准后，检查是否为 L3（可测试命令）。
+
+```
+读取 PLAN.md milestones 表格的验收标准
+    ↓
+检查是否为 L3：
+├── L3（有具体命令）→ ✅ 直接使用
+├── L2（模糊表述）→ 自动转换为 L3：
+│   「demo3 全流程跑通」
+│   → 「python -m expert_teams team create --id demo --flow demo3
+│       && python -m expert_teams flow advance demo
+│       && python -m expert_teams flow advance demo
+│       && python -m expert_teams team status demo」
+└── L1（无）→ 🔴 拒绝执行，要求补充：
+    「subTask【{task}】缺少验收标准，请补充后再拆解」
+```
+
+**L3 转换模板**：
+
+| 原始表述 | L3 转换示例 |
+|---------|------------|
+| 「全流程跑通」 | `cmd1 && cmd2 && cmd3 && cmd4` |
+| 「配置合理」 | `grep 'keyword' config.toml` |
+| 「代码规范」 | `ruff check src/; echo $? 输出 0` |
+| 「文档完整」 | `grep -E '安装|快速开始|API' README.md` |
+
+**判断标准**：
+- ✅ L3：有具体命令（`python xxx`, `pytest xxx`, `grep xxx`）
+- ⚠️ L2：模糊表述（「跑通」「合理」「完整」）
+- ❌ L1：无任何验收条件
 
 ### Step 1：读取 PLAN.md + 复述确认
 
